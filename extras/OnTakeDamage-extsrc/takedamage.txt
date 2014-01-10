@@ -1,0 +1,20 @@
+"Games"
+{
+	"#default"
+	{
+
+		"#supported"
+		{
+			"game"		"tf"
+		}
+
+		"Offsets"
+		{
+			"TakeDamage"
+			{
+				"windows"	"60"
+				"linux"		"61"
+			}
+		}
+	}
+}

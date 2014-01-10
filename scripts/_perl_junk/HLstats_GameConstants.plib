@@ -1,0 +1,31 @@
+use constant {
+	UNKNOWN => -1,
+	CSS => 0,
+	HL2MP => 1,
+	TF => 2,
+	DODS => 3,
+	INSMOD => 4,
+	FF => 5,
+	HIDDEN => 6,
+	ZPS => 7,
+	AOC => 8,
+	CSTRIKE => 9,
+	TFC => 10,
+	DOD => 11,
+	NS => 12,
+	L4D => 13,
+	FOF => 14,
+	GES => 15,
+	BG2 => 16,
+	SGTLS => 17,
+	DYSTOPIA => 18,
+	NTS => 19,
+	PVKII => 20,
+	CSP => 21,
+	VALVE => 22,
+	
+	TRACKMODE_NORMAL => 1,
+	TRACKMODE_LAN => 2
+};
+
+1;
