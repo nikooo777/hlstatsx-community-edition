@@ -21,7 +21,7 @@
  */
 
 #pragma semicolon 1
- 
+#pragma newdecls required
 #define REQUIRE_EXTENSIONS 
 #include <sourcemod>
 #include <sdktools>
@@ -29,7 +29,6 @@
 #undef REQUIRE_EXTENSIONS
 #include <cstrike>
 #include <clientprefs>
- 
 #define VERSION "1.6.19"
 #define HLXTAG "HLstatsX:CE"
 
@@ -53,15 +52,15 @@ enum GameType {
 	Game_CSGO,
 };
 
-new GameType:gamemod = Game_Unknown;
+GameType gamemod = Game_Unknown;
 
-new Handle: hlx_block_chat_commands;
-new Handle: hlx_message_prefix;
-new Handle: hlx_protect_address;
-new Handle: hlx_server_tag;
-new Handle: sv_tags;
-new Handle: message_recipients;
-new const String: blocked_commands[][] = { "rank", "skill", "points", "place", "session", "session_data", 
+Handle hlx_block_chat_commands;
+Handle hlx_message_prefix;
+Handle hlx_protect_address;
+Handle hlx_server_tag;
+Handle sv_tags;
+Handle message_recipients;
+char blocked_commands[][] = { "rank", "skill", "points", "place", "session", "session_data", 
                                      "kpd", "kdratio", "kdeath", "next", "load", "status", "servers", 
                                      "top20", "top10", "top5", "clans", "bans", "cheaters", "statsme", "weapons", 
                                      "weapon", "action", "actions", "accuracy", "targets", "target", "kills", 
@@ -70,28 +69,28 @@ new const String: blocked_commands[][] = { "rank", "skill", "points", "place", "
                                      "hlx_chat 0", "hlx_chat 1", "hlx_menu", "servers 1", "servers 2", 
                                      "servers 3", "hlx", "hlstatsx", "help" };
 
-new Handle:HLstatsXMenuMain;
-new Handle:HLstatsXMenuAuto;
-new Handle:HLstatsXMenuEvents;
+Menu HLstatsXMenuMain;
+Menu HLstatsXMenuAuto;
+Menu HLstatsXMenuEvents;
 
-new Handle: PlayerColorArray;
-new ColorSlotArray[] = { -1, -1, -1, -1, -1, -1 };
+Handle PlayerColorArray;
+int ColorSlotArray[] = { -1, -1, -1, -1, -1, -1 };
 
-new const String:ct_models[][] = {
+char ct_models[][] = {
 	"models/player/ct_urban.mdl", 
 	"models/player/ct_gsg9.mdl", 
 	"models/player/ct_sas.mdl", 
 	"models/player/ct_gign.mdl"
 };
 
-new const String:ts_models[][] = {
+char ts_models[][] = {
 	"models/player/t_phoenix.mdl", 
 	"models/player/t_leet.mdl", 
 	"models/player/t_arctic.mdl", 
 	"models/player/t_guerilla.mdl"
 };
 
-new const String: modnamelist[][] = {
+char modnamelist[][] = {
 	"Counter-Strike: Source",
 	"Day of Defeat: Source",
 	"Left 4 Dead (1 or 2)",
@@ -110,20 +109,20 @@ new const String: modnamelist[][] = {
 	"Counter-Strike: Global Offensive"
 };
 
-new String: message_prefix[32];
-new bool:g_bPlyrCanDoMotd[MAXPLAYERS+1];
-new bool:g_bGameCanDoMotd = true;
-new bool:g_bTrackColors4Chat;
-new g_iSDKVersion = SOURCE_SDK_UNKNOWN;
-new Handle:g_cvarTeamPlay = INVALID_HANDLE;
-new bool:g_bTeamPlay;
-new bool:g_bLateLoad = false;
-new bool:g_bIgnoreNextTagChange = false;
-new Handle:g_hCustomTags;
+char message_prefix[32];
+bool g_bPlyrCanDoMotd[MAXPLAYERS+1];
+bool g_bGameCanDoMotd = true;
+bool g_bTrackColors4Chat;
+int g_iSDKVersion = SOURCE_SDK_UNKNOWN;
+Handle g_cvarTeamPlay = INVALID_HANDLE;
+bool g_bTeamPlay;
+bool g_bLateLoad = false;
+bool g_bIgnoreNextTagChange = false;
+Handle g_hCustomTags;
 
 #define SVTAGSIZE 128
 
-public Plugin:myinfo = {
+public Plugin myinfo = {
 	name = "HLstatsX CE Ingame Plugin",
 	author = "psychonic",
 	description = "Provides ingame functionality for interaction from an HLstatsX CE installation",
@@ -132,7 +131,7 @@ public Plugin:myinfo = {
 };
 
 
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	g_bLateLoad = late;
 	MarkNativeAsOptional("CS_SwitchTeam");
@@ -143,7 +142,7 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 }
 
 
-public OnPluginStart() 
+public void OnPluginStart() 
 {
 	get_server_mod();
 
@@ -204,15 +203,15 @@ public OnPluginStart()
 		}
 	}
 	
-	CreateConVar("hlxce_plugin_version", VERSION, "HLstatsX:CE Ingame Plugin", FCVAR_PLUGIN|FCVAR_NOTIFY);
-	CreateConVar("hlxce_version", "", "HLstatsX:CE", FCVAR_PLUGIN|FCVAR_NOTIFY);
-	CreateConVar("hlxce_webpage", "http://www.hlxcommunity.com", "http://www.hlxcommunity.com", FCVAR_PLUGIN|FCVAR_NOTIFY);
+	CreateConVar("hlxce_plugin_version", VERSION, "HLstatsX:CE Ingame Plugin", FCVAR_NOTIFY);
+	CreateConVar("hlxce_version", "", "HLstatsX:CE", FCVAR_NOTIFY);
+	CreateConVar("hlxce_webpage", "http://www.hlxcommunity.com", "http://www.hlxcommunity.com", FCVAR_NOTIFY);
 	
-	hlx_block_chat_commands = CreateConVar("hlx_block_commands", "1", "If activated HLstatsX commands are blocked from the chat area", FCVAR_PLUGIN);
-	hlx_message_prefix = CreateConVar("hlx_message_prefix", "", "Define the prefix displayed on every HLstatsX ingame message", FCVAR_PLUGIN);
-	hlx_protect_address = CreateConVar("hlx_protect_address", "", "Address to be protected for logging/forwarding", FCVAR_PLUGIN);
+	hlx_block_chat_commands = CreateConVar("hlx_block_commands", "1", "If activated HLstatsX commands are blocked from the chat area");
+	hlx_message_prefix = CreateConVar("hlx_message_prefix", "", "Define the prefix displayed on every HLstatsX ingame message");
+	hlx_protect_address = CreateConVar("hlx_protect_address", "", "Address to be protected for logging/forwarding");
 	hlx_server_tag = CreateConVar("hlx_server_tag", "1", "If enabled, adds \"HLstatsX:CE\" to server tags on supported games. 1 = Enabled (default), 0 = Disabled",
-		FCVAR_PLUGIN, true, 0.0, true, 1.0);
+		_, true, 0.0, true, 1.0);
 	
 	g_hCustomTags = CreateArray(SVTAGSIZE);
 	sv_tags = FindConVar("sv_tags");
@@ -221,7 +220,7 @@ public OnPluginStart()
 	if (g_bLateLoad)
 	{
 		GetConVarString(hlx_message_prefix, message_prefix, sizeof(message_prefix));
-		decl String:protaddr[24];
+		char protaddr[24];
 		GetConVarString(hlx_protect_address, protaddr, sizeof(protaddr));
 		OnProtectAddressChange(hlx_protect_address, "", protaddr);
 	}
@@ -248,7 +247,7 @@ public OnPluginStart()
 }
 
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	if (LibraryExists("clientprefs"))
 	{
@@ -256,7 +255,7 @@ public OnAllPluginsLoaded()
 	}
 }
 
-public HLXSettingsMenu(client, CookieMenuAction:action, any:info, String:buffer[], maxlen)
+public void HLXSettingsMenu(int client, CookieMenuAction action, any info, char[] buffer, int maxlen)
 {
 	if (action == CookieMenuAction_SelectOption)
 	{
@@ -265,7 +264,7 @@ public HLXSettingsMenu(client, CookieMenuAction:action, any:info, String:buffer[
 }
 
 
-public OnMapStart()
+public void OnMapStart()
 {
 	GetTeams(gamemod == Game_INSMOD);
 
@@ -280,12 +279,12 @@ public OnMapStart()
 	}
 }
 
-bool:BTagsSupported()
+bool BTagsSupported()
 {
 	return (sv_tags != INVALID_HANDLE && (g_iSDKVersion == SOURCE_SDK_EPISODE2 || g_iSDKVersion == SOURCE_SDK_EPISODE2VALVE || gamemod == Game_ND));
 }
 
-stock MyAddServerTag(const String:tag[])
+stock void MyAddServerTag(const char[] tag)
 {
 	if (!BTagsSupported())
 	{
@@ -303,7 +302,7 @@ stock MyAddServerTag(const String:tag[])
 		PushArrayString(g_hCustomTags, tag);
 	}
 	
-	decl String:current_tags[SVTAGSIZE];
+	char current_tags[SVTAGSIZE];
 	GetConVarString(sv_tags, current_tags, sizeof(current_tags));
 	if (StrContains(current_tags, tag) > -1)
 	{
@@ -311,10 +310,10 @@ stock MyAddServerTag(const String:tag[])
 		return;
 	}
 	
-	decl String:new_tags[SVTAGSIZE];
+	char new_tags[SVTAGSIZE];
 	Format(new_tags, sizeof(new_tags), "%s%s%s", current_tags, (current_tags[0]!=0)?",":"", tag);
 	
-	new flags = GetConVarFlags(sv_tags);
+	int flags = GetConVarFlags(sv_tags);
 	SetConVarFlags(sv_tags, flags & ~FCVAR_NOTIFY);
 	g_bIgnoreNextTagChange = true;
 	SetConVarString(sv_tags, new_tags);
@@ -322,7 +321,7 @@ stock MyAddServerTag(const String:tag[])
 	SetConVarFlags(sv_tags, flags);
 }
 
-stock MyRemoveServerTag(const String:tag[])
+stock void MyRemoveServerTag(const char[] tag)
 {
 	if (!BTagsSupported())
 	{
@@ -330,13 +329,13 @@ stock MyRemoveServerTag(const String:tag[])
 		return;
 	}
 	
-	new idx = FindStringInArray(g_hCustomTags, tag);
+	int idx = FindStringInArray(g_hCustomTags, tag);
 	if (idx > -1)
 	{
 		RemoveFromArray(g_hCustomTags, idx);
 	}
 	
-	decl String:current_tags[SVTAGSIZE];
+	char current_tags[SVTAGSIZE];
 	GetConVarString(sv_tags, current_tags, sizeof(current_tags));
 	if (StrContains(current_tags, tag) == -1)
 	{
@@ -347,7 +346,7 @@ stock MyRemoveServerTag(const String:tag[])
 	ReplaceString(current_tags, sizeof(current_tags), tag, "");
 	ReplaceString(current_tags, sizeof(current_tags), ",,", "");
 	
-	new flags = GetConVarFlags(sv_tags);
+	int flags = GetConVarFlags(sv_tags);
 	SetConVarFlags(sv_tags, flags & ~FCVAR_NOTIFY);
 	g_bIgnoreNextTagChange = true;
 	SetConVarString(sv_tags, current_tags);
@@ -355,9 +354,9 @@ stock MyRemoveServerTag(const String:tag[])
 	SetConVarFlags(sv_tags, flags);
 }
 
-get_server_mod()
+void get_server_mod()
 {
-	new String: game_description[64];
+	char game_description[64];
 	GetGameDescription(game_description, sizeof(game_description), true);
 	
 	if (StrContains(game_description, "Counter-Strike: Source", false) != -1)
@@ -417,7 +416,7 @@ get_server_mod()
 	// game mod could not detected, try further
 	if (gamemod == Game_Unknown)
 	{
-		new String: game_folder[64];
+		char game_folder[64];
 		GetGameFolderName(game_folder, sizeof(game_folder));
 		if (StrContains(game_folder, "cstrike", false) != -1)
 		{
@@ -492,12 +491,12 @@ get_server_mod()
 	}
 	if (gamemod > Game_Unknown)
 	{
-		LogToGame("HLX:CE Mod Detection: %s", modnamelist[_:gamemod]);
+		LogToGame("HLX:CE Mod Detection: %s", modnamelist[view_as<int>(gamemod)]);
 		LogToGame("HLX:CE If this is incorrect, please file a bug at hlxcommunity.com");
 	}
 }
 
-public OnClientPostAdminCheck(client)
+public void OnClientPostAdminCheck(int client)
 {
 	if (g_bGameCanDoMotd && !IsFakeClient(client))
 	{
@@ -506,7 +505,7 @@ public OnClientPostAdminCheck(client)
 }
 
 
-public motdQuery(QueryCookie:cookie, client, ConVarQueryResult:result, const String:cvarName[], const String:cvarValue[])
+public void motdQuery(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue)
 {
 	if (result == ConVarQuery_Okay && StringToInt(cvarValue) == 0 || result != ConVarQuery_Okay)
 	{
@@ -515,7 +514,7 @@ public motdQuery(QueryCookie:cookie, client, ConVarQueryResult:result, const Str
 }
 
 
-public OnServerTagChange(Handle:cvar, const String:oldVal[], const String:newVal[])
+public void OnServerTagChange(Handle cvar, const char[] oldVal, const char[] newVal)
 {
 	if (GetConVarBool(hlx_server_tag))
 	{
@@ -527,7 +526,7 @@ public OnServerTagChange(Handle:cvar, const String:oldVal[], const String:newVal
 	}
 }
 
-public OnSVTagsChange(Handle:cvar, const String:oldVal[], const String:newVal[])
+public void OnSVTagsChange(Handle cvar, const char[] oldVal, const char[] newVal)
 {
 	if (g_bIgnoreNextTagChange)
 	{
@@ -536,43 +535,43 @@ public OnSVTagsChange(Handle:cvar, const String:oldVal[], const String:newVal[])
 	}
 	
 	// reapply each custom tag
-	new cnt = GetArraySize(g_hCustomTags);
-	for (new i = 0; i < cnt; i++)
+	int cnt = GetArraySize(g_hCustomTags);
+	for (int i = 0; i < cnt; i++)
 	{
-		decl String:tag[SVTAGSIZE];
+		char tag[SVTAGSIZE];
 		GetArrayString(g_hCustomTags, i, tag, sizeof(tag));
 		MyAddServerTag(tag);
 	}
 }
 
 
-public OnProtectAddressChange(Handle:cvar, const String:oldVal[], const String:newVal[])
+public void OnProtectAddressChange(Handle cvar, const char[] oldVal, const char[] newVal)
 {
 	if (newVal[0] > 0)
 	{
-		decl String: log_command[192];
+		char log_command[192];
 		Format(log_command, sizeof(log_command), "logaddress_add %s", newVal);
 		LogToGame("Command: %s", log_command);
 		ServerCommand(log_command);
 	}
 }
 
-public OnTeamPlayChange(Handle:cvar, const String:oldVal[], const String:newVal[])
+public void OnTeamPlayChange(Handle cvar, const char[] oldVal, const char[] newVal)
 {
 	g_bTeamPlay = GetConVarBool(g_cvarTeamPlay);
 }
 
-public Action:ProtectLoggingChange(args)
+public Action ProtectLoggingChange(int args)
 {
 	if (hlx_protect_address != INVALID_HANDLE)
 	{
-		decl String: protect_address[192];
+		char protect_address[192];
 		GetConVarString(hlx_protect_address, protect_address, sizeof(protect_address));
 		if (strcmp(protect_address, "") != 0)
 		{
 			if (args >= 1)
 			{
-				decl String: log_action[192];
+				char log_action[192];
 				GetCmdArg(1, log_action, sizeof(log_action));
 				if ((strcmp(log_action, "off") == 0) || (strcmp(log_action, "0") == 0))
 				{
@@ -586,21 +585,21 @@ public Action:ProtectLoggingChange(args)
 }
 
 
-public Action:ProtectForwardingChange(args)
+public Action ProtectForwardingChange(int args)
 {
 	if (hlx_protect_address != INVALID_HANDLE)
 	{
-		decl String: protect_address[192];
+		char protect_address[192];
 		GetConVarString(hlx_protect_address, protect_address, sizeof(protect_address));
 		if (strcmp(protect_address, "") != 0)
 		{
 			if (args == 1)
 			{
-				decl String: log_action[192];
+				char log_action[192];
 				GetCmdArg(1, log_action, sizeof(log_action));
 				if (strcmp(log_action, protect_address) == 0)
 				{
-					decl String: log_command[192];
+					char log_command[192];
 					Format(log_command, sizeof(log_command), "logaddress_add %s", protect_address);
 					LogToGame("HLstatsX address protection active, logaddress readded!");
 					ServerCommand(log_command);
@@ -608,16 +607,16 @@ public Action:ProtectForwardingChange(args)
 			}
 			else if (args > 1)
 			{
-				new String: log_action[192];
-				for(new i = 1; i <= args; i++)
+				char log_action[192];
+				for(int i = 1; i <= args; i++)
 				{
-					decl String: temp_argument[192];
+					char temp_argument[192];
 					GetCmdArg(i, temp_argument, sizeof(temp_argument));
 					strcopy(log_action[strlen(log_action)], sizeof(log_action), temp_argument);
 				}
 				if (strcmp(log_action, protect_address) == 0)
 				{
-					decl String: log_command[192];
+					char log_command[192];
 					Format(log_command, sizeof(log_command), "logaddress_add %s", protect_address);
 					LogToGame("HLstatsX address protection active, logaddress readded!");
 					ServerCommand(log_command);
@@ -631,15 +630,15 @@ public Action:ProtectForwardingChange(args)
 
 
 
-public Action:ProtectForwardingDelallChange(args)
+public Action ProtectForwardingDelallChange(int args)
 {
 	if (hlx_protect_address != INVALID_HANDLE)
 	{
-		decl String: protect_address[192];
+		char protect_address[192];
 		GetConVarString(hlx_protect_address, protect_address, sizeof(protect_address));
 		if (strcmp(protect_address, "") != 0)
 		{
-			decl String: log_command[192];
+			char log_command[192];
 			Format(log_command, sizeof(log_command), "logaddress_add %s", protect_address);
 			LogToGame("HLstatsX address protection active, logaddress readded!");
 			ServerCommand(log_command);
@@ -649,24 +648,24 @@ public Action:ProtectForwardingDelallChange(args)
 }
 
 
-public OnMessagePrefixChange(Handle:cvar, const String:oldVal[], const String:newVal[])
+public void OnMessagePrefixChange(Handle cvar, const char[] oldVal, const char[] newVal)
 {
 	strcopy(message_prefix, sizeof(message_prefix), newVal);
 }
 
 
-public Action:MessagePrefixClear(args)
+public Action MessagePrefixClear(int args)
 {
 	message_prefix = "";
 }
 
 
-find_player_team_slot(team_index) 
+void find_player_team_slot(int team_index) 
 {
 	if (team_index > -1)
 	{
 		ColorSlotArray[team_index] = -1;
-		for(new i = 1; i <= MaxClients; i++)
+		for(int i = 1; i <= MaxClients; i++)
 		{
 			if (IsClientInGame(i) && GetClientTeam(i) == team_index)
 			{
@@ -678,11 +677,11 @@ find_player_team_slot(team_index)
 }
 
 
-stock validate_team_colors() 
+stock void validate_team_colors() 
 {
-	for (new i = 0; i < sizeof(ColorSlotArray); i++)
+	for (int i = 0; i < sizeof(ColorSlotArray); i++)
 	{
-		new color_client = ColorSlotArray[i];
+		int color_client = ColorSlotArray[i];
 		if (color_client > 0)
 		{
 			if (IsClientInGame(color_client) && GetClientTeam(color_client) != color_client)
@@ -700,11 +699,11 @@ stock validate_team_colors()
 	}
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	if (g_bTrackColors4Chat && client > 0 && IsClientInGame(client))
 	{
-		new team_index = GetClientTeam(client);
+		int team_index = GetClientTeam(client);
 		if (client == ColorSlotArray[team_index])
 		{
 			ColorSlotArray[team_index] = -1;
@@ -714,20 +713,20 @@ public OnClientDisconnect(client)
 	g_bPlyrCanDoMotd[client] = false;
 }
 
-color_player(color_type, player_index, String: client_message[192]) 
+int color_player(int color_type, int player_index, char client_message[192]) 
 {
-	new color_player_index = -1;
+	int color_player_index = -1;
 	if (g_bTrackColors4Chat || (gamemod == Game_DODS) || (gamemod == Game_ZPS) || (gamemod == Game_GES) || (gamemod == Game_CSP))
 	{
-		decl String: client_name[192];
+		char client_name[192];
 		GetClientName(player_index, client_name, sizeof(client_name));
 		if ((strcmp(client_message, "") != 0) && (strcmp(client_name, "") != 0))
 		{
 			if (color_type == 1)
 			{
-				decl String: search_client_name[192];
+				char search_client_name[192];
 				Format(search_client_name, sizeof(search_client_name), "%s ", client_name);
-				decl String: colored_player_name[192];
+				char colored_player_name[192];
 				switch (gamemod)
 				{
 					case Game_DODS, Game_GES, Game_CSP:
@@ -746,9 +745,9 @@ color_player(color_type, player_index, String: client_message[192])
 			}
 			else
 			{
-				decl String: search_client_name[192];
+				char search_client_name[192];
 				Format(search_client_name, sizeof(search_client_name), " %s ", client_name);
-				decl String: colored_player_name[192];
+				char colored_player_name[192];
 				switch (gamemod)
 				{
 					case Game_ZPS:
@@ -764,13 +763,13 @@ color_player(color_type, player_index, String: client_message[192])
 	}
 	else if (gamemod == Game_FF)
 	{
-		decl String: client_name[192];
+		char client_name[192];
 		GetClientName(player_index, client_name, sizeof(client_name));
 		
-		new team = GetClientTeam(player_index);
+		int team = GetClientTeam(player_index);
 		if (team > 1 && team < 6)
 		{
-			decl String: colored_player_name[192];
+			char colored_player_name[192];
 			Format(colored_player_name, sizeof(colored_player_name), "^%d%s^0", (team-1), client_name);
 			if (ReplaceString(client_message, sizeof(client_message), client_name, colored_player_name) > 0)
 			{
@@ -782,30 +781,29 @@ color_player(color_type, player_index, String: client_message[192])
 }
 
 
-
-color_all_players(String: message[192]) 
+int color_all_players(char message[192]) 
 {
-	new color_index = -1;
+	int color_index = -1;
 	if ((g_bTrackColors4Chat || (gamemod == Game_DODS) || (gamemod == Game_ZPS) || (gamemod == Game_FF) || (gamemod == Game_GES) || (gamemod == Game_CSP)) && (PlayerColorArray != INVALID_HANDLE))
 	{
 		if (strcmp(message, "") != 0)
 		{
 			ClearArray(PlayerColorArray);
 
-			new lowest_matching_pos = 192;
-			new lowest_matching_pos_client = -1;
+			int lowest_matching_pos = 192;
+			int lowest_matching_pos_client = -1;
 
-			for(new i = 1; i <= MaxClients; i++)
+			for(int i = 1; i <= MaxClients; i++)
 			{
-				new client = i;
+				int client = i;
 				if (IsClientInGame(client))
 				{
-					decl String: client_name[32];
+					char client_name[32];
 					GetClientName(client, client_name, sizeof(client_name));
 
 					if (strcmp(client_name, "") != 0)
 					{
-						new message_pos = StrContains(message, client_name);
+						int message_pos = StrContains(message, client_name);
 						if (message_pos > -1)
 						{
 							if (lowest_matching_pos > message_pos)
@@ -813,22 +811,22 @@ color_all_players(String: message[192])
 								lowest_matching_pos = message_pos;
 								lowest_matching_pos_client = client;
 							}
-							new TempPlayerColorArray[1];
+							int TempPlayerColorArray[1];
 							TempPlayerColorArray[0] = client;
 							PushArrayArray(PlayerColorArray, TempPlayerColorArray);
 						}
 					}
 				}
 			}
-			new size = GetArraySize(PlayerColorArray);
-			for (new i = 0; i < size; i++)
+			int size = GetArraySize(PlayerColorArray);
+			for (int i = 0; i < size; i++)
 			{
-				new temp_player_array[1];
+				int temp_player_array[1];
 				GetArrayArray(PlayerColorArray, i, temp_player_array);
-				new temp_client = temp_player_array[0];
+				int temp_client = temp_player_array[0];
 				if (temp_client == lowest_matching_pos_client)
 				{
-					new temp_color_index = color_player(1, temp_client, message);
+					int temp_color_index = color_player(1, temp_client, message);
 					color_index = temp_color_index;
 				}
 				else
@@ -845,7 +843,7 @@ color_all_players(String: message[192])
 
 
 
-color_team_entities(String:message[192])
+int[] color_team_entities(char message[192])
 {
 	switch(gamemod)
 	{
@@ -1065,28 +1063,28 @@ color_team_entities(String:message[192])
 }
 
 
-display_menu(player_index, time, String: full_message[1024], need_handler = 0)
+void display_menu(int player_index, int timex, char full_message[1024], int need_handler = 0)
 {
 	ReplaceString(full_message, sizeof(full_message), "\\n", "\10");
 	if (need_handler == 0)
 	{
-		InternalShowMenu(player_index, full_message, time);
+		InternalShowMenu(player_index, full_message, timex);
 	}
 	else
 	{
-		InternalShowMenu(player_index, full_message, time, (1<<0)|(1<<1)|(1<<2)|(1<<3)|(1<<4)|(1<<5)|(1<<6)|(1<<7)|(1<<8)|(1<<9), InternalMenuHandler);
+		InternalShowMenu(player_index, full_message, timex, (1<<0)|(1<<1)|(1<<2)|(1<<3)|(1<<4)|(1<<5)|(1<<6)|(1<<7)|(1<<8)|(1<<9), InternalMenuHandler);
 	}
 }
 
 
-public InternalMenuHandler(Handle:menu, MenuAction:action, param1, param2)
+public int InternalMenuHandler(Menu menu, MenuAction action, int param1, int param2)
 {
-	new client = param1;
+	int client = param1;
 	if (IsClientInGame(client))
 	{
 		if (action == MenuAction_Select)
 		{
-			decl String: player_event[192];
+			char player_event[192];
 			IntToString(param2, player_event, sizeof(player_event));
 			LogPlayerEvent(client, "selected", player_event);
 		}
@@ -1098,7 +1096,7 @@ public InternalMenuHandler(Handle:menu, MenuAction:action, param1, param2)
 }
 
 
-public Action:hlx_sm_psay(args)
+public Action hlx_sm_psay(int args)
 {
 	if (args < 2)
 	{
@@ -1106,14 +1104,14 @@ public Action:hlx_sm_psay(args)
 		return Plugin_Handled;
 	}
 
-	decl String: client_list[192];
+	char client_list[192];
 	GetCmdArg(1, client_list, sizeof(client_list));
 	BuildClientList(client_list);
 
-	decl String: colored_param[32];
+	char colored_param[32];
 	GetCmdArg(2, colored_param, sizeof(colored_param));
-	new is_colored = 0;
-	new ignore_param = 0;
+	int is_colored = 0;
+	int ignore_param = 0;
 	
 	if (strcmp(colored_param, "1") == 0)
 	{
@@ -1130,7 +1128,7 @@ public Action:hlx_sm_psay(args)
 		ignore_param = 1;
 	}
 
-	new String: client_message[192];
+	char client_message[192];
 	GetCmdArg((ignore_param + 2), client_message, sizeof(client_message));
 	
 	if (IsStackEmpty(message_recipients))
@@ -1138,8 +1136,8 @@ public Action:hlx_sm_psay(args)
 		return Plugin_Handled;
 	}
 	
-	new color_index = -1;
-	decl String: display_message[192];
+	int color_index = -1;
+	char display_message[192];
 
 	switch (gamemod)
 	{
@@ -1149,7 +1147,7 @@ public Action:hlx_sm_psay(args)
 			{
 				if (is_colored == 1)
 				{
-					new player_color_index = color_all_players(client_message);
+					int player_color_index = color_all_players(client_message);
 					if (player_color_index > -1)
 					{
 						color_index = player_color_index;
@@ -1173,7 +1171,7 @@ public Action:hlx_sm_psay(args)
 				Format(display_message, sizeof(display_message), "\x01\x0B%c%s\x01 %s", ((gamemod == Game_ZPS || gamemod == Game_GES)?5:4), message_prefix, client_message);
 			}
 			
-			new bool: setupColorForRecipients = false;
+			bool setupColorForRecipients = false;
 			if (color_index == -1)
 			{
 				setupColorForRecipients = true;
@@ -1183,17 +1181,17 @@ public Action:hlx_sm_psay(args)
 			{
 				while (IsStackEmpty(message_recipients) == false)
 				{
-					new recipient_client = -1;
+					int recipient_client = -1;
 					PopStackCell(message_recipients, recipient_client);
 
-					new player_index = GetClientOfUserId(recipient_client);
+					int player_index = GetClientOfUserId(recipient_client);
 					if (player_index > 0 && !IsFakeClient(player_index) && IsClientInGame(player_index))
 					{
 						if (setupColorForRecipients == true)
 						{
 							color_index = player_index;
 						}
-						new Handle:hBf;
+						Handle hBf;
 						hBf = StartMessageOne("SayText2", player_index, USERMSG_RELIABLE|USERMSG_BLOCKHOOKS);
 						
 						if (hBf != INVALID_HANDLE)
@@ -1230,7 +1228,7 @@ public Action:hlx_sm_psay(args)
 		{
 			// thanks to hlstriker for help with this
 			
-			decl String: client_message_backup[192];
+			char client_message_backup[192];
 			strcopy(client_message_backup, sizeof(client_message_backup), client_message);
 		
 			if (is_colored == 1)
@@ -1268,7 +1266,7 @@ public Action:hlx_sm_psay(args)
 }
 
 
-public Action:hlx_sm_psay2(args)
+public Action hlx_sm_psay2(int args)
 {
 	if (args < 2)
 	{
@@ -1276,20 +1274,20 @@ public Action:hlx_sm_psay2(args)
 		return Plugin_Handled;
 	}
 	
-	decl String: client_list[192];
+	char client_list[192];
 	GetCmdArg(1, client_list, sizeof(client_list));
 	BuildClientList(client_list);
 
-	decl String: colored_param[32];
+	char colored_param[32];
 	GetCmdArg(2, colored_param, sizeof(colored_param));
 	
-	new ignore_param = 0;
+	int ignore_param = 0;
 	if (strcmp(colored_param, "2") == 0 || strcmp(colored_param, "1") == 0 || strcmp(colored_param, "0") == 0)
 	{
 		ignore_param = 1;
 	}
 
-	new String: client_message[192];
+	char client_message[192];
 	GetCmdArg((ignore_param + 2), client_message, sizeof(client_message));
 
 	if (IsStackEmpty(message_recipients)) {
@@ -1297,17 +1295,17 @@ public Action:hlx_sm_psay2(args)
 	}
 	
 	// Strip color control codes
-	decl String:buffer_message[192];
-	new j = 0;
-	for (new i = 0; i < sizeof(client_message); i++)
+	char buffer_message[192];
+	int j = 0;
+	for (int i = 0; i < sizeof(client_message); i++)
 	{
-		new char = client_message[i];
-		if (char < 5 && char > 0)
+		int c = client_message[i];
+		if (c < 5 && c > 0)
 		{
 			continue;
 		}
 		buffer_message[j] = client_message[i];
-		if (char == 0)
+		if (c == 0)
 		{
 			break;
 		}
@@ -1318,7 +1316,7 @@ public Action:hlx_sm_psay2(args)
 	{
 		case Game_INSMOD:
 		{
-			new prefix = 0;
+			int prefix = 0;
 			if (strcmp(message_prefix, "") != 0)
 			{
 				prefix = 1;
@@ -1327,14 +1325,14 @@ public Action:hlx_sm_psay2(args)
 			
 			while (IsStackEmpty(message_recipients) == false)
 			{
-				new recipient_client = -1;
+				int recipient_client = -1;
 				PopStackCell(message_recipients, recipient_client);
 
-				new player_index = GetClientOfUserId(recipient_client);
+				int player_index = GetClientOfUserId(recipient_client);
 				if (player_index > 0 && !IsFakeClient(player_index) && IsClientInGame(player_index))
 				{
 					// thanks to Fyren and IceMatrix for help with this
-					new Handle:hBf;
+					Handle hBf;
 					hBf = StartMessageOne("SayText", player_index, USERMSG_RELIABLE|USERMSG_BLOCKHOOKS);
 					if (hBf != INVALID_HANDLE)
 					{
@@ -1415,7 +1413,7 @@ public Action:hlx_sm_psay2(args)
 }
 
 
-public Action:hlx_sm_csay(args)
+public Action hlx_sm_csay(int args)
 {
 	if (args < 1)
 	{
@@ -1423,7 +1421,7 @@ public Action:hlx_sm_csay(args)
 		return Plugin_Handled;
 	}
 
-	new String: display_message[192];
+	char display_message[192];
 	GetCmdArg(1, display_message, sizeof(display_message));
 
 	if (strcmp(display_message, "") != 0)
@@ -1442,7 +1440,7 @@ public Action:hlx_sm_csay(args)
 }
 
 
-public Action:hlx_sm_msay(args)
+public Action hlx_sm_msay(int args)
 {
 	if (args < 3)
 	{
@@ -1455,36 +1453,36 @@ public Action:hlx_sm_msay(args)
 		return Plugin_Handled;
 	}
 	
-	decl String: display_time[16];
+	char display_time[16];
 	GetCmdArg(1, display_time, sizeof(display_time));
 	
-	decl String: client_id[32];
+	char client_id[32];
 	GetCmdArg(2, client_id, sizeof(client_id));
 	
-	decl String: handler_param[32];
+	char handler_param[32];
 	GetCmdArg(3, handler_param, sizeof(handler_param));
 	
-	new ignore_param = 0;
-	new need_handler = 0;
+	int ignore_param = 0;
+	int need_handler = 0;
 	if (handler_param[1] == 0 && (handler_param[0] == '1' || handler_param[0] == '0'))
 	{
 		need_handler = 1;
 		ignore_param = 1;
 	}
 
-	new String: client_message[1024];
+	char client_message[1024];
 	GetCmdArg((ignore_param + 3), client_message, 1024);
 
-	new time = StringToInt(display_time);
+	int time = StringToInt(display_time);
 	if (time <= 0)
 	{
 		time = 10;
 	}
 
-	new client = StringToInt(client_id);
+	int client = StringToInt(client_id);
 	if (client > 0)
 	{
-		new player_index = GetClientOfUserId(client);
+		int player_index = GetClientOfUserId(client);
 		if (player_index > 0 && !IsFakeClient(player_index) && IsClientInGame(player_index) && strcmp(client_message, "") != 0)
 		{
 			display_menu(player_index, time, client_message, need_handler);
@@ -1495,7 +1493,7 @@ public Action:hlx_sm_msay(args)
 }
 
 
-public Action:hlx_sm_tsay(args)
+public Action hlx_sm_tsay(int args)
 {
 	if (args < 3)
 	{
@@ -1503,22 +1501,22 @@ public Action:hlx_sm_tsay(args)
 		return Plugin_Handled;
 	}
 
-	decl String: display_time[16];
+	char display_time[16];
 	GetCmdArg(1, display_time, sizeof(display_time));
 	
-	decl String: client_id[32];
+	char client_id[32];
 	GetCmdArg(2, client_id, sizeof(client_id));
 
-	new String: client_message[192];
+	char client_message[192];
 	GetCmdArg(3, client_message, sizeof(client_message));
 	
-	new client = StringToInt(client_id);
+	int client = StringToInt(client_id);
 	if ((client > 0) && (strcmp(client_message, "") != 0))
 	{
-		new player_index = GetClientOfUserId(client);
+		int player_index = GetClientOfUserId(client);
 		if (player_index > 0 && !IsFakeClient(player_index) && IsClientInGame(player_index))
 		{
-			new Handle:values = CreateKeyValues("msg");
+			Handle values = CreateKeyValues("msg");
 			KvSetString(values, "title", client_message);
 			KvSetNum(values, "level", 1); 
 			KvSetString(values, "time", display_time); 
@@ -1531,7 +1529,7 @@ public Action:hlx_sm_tsay(args)
 }
 
 
-public Action:hlx_sm_hint(args)
+public Action hlx_sm_hint(int args)
 {
 	if (args < 2)
 	{
@@ -1539,21 +1537,21 @@ public Action:hlx_sm_hint(args)
 		return Plugin_Handled;
 	}
 
-	decl String: client_list[192];
+	char client_list[192];
 	GetCmdArg(1, client_list, sizeof(client_list));
 	BuildClientList(client_list);
 
-	new String: client_message[192];
+	char client_message[192];
 	GetCmdArg(2, client_message, sizeof(client_message));
 
 	if (IsStackEmpty(message_recipients) == false && strcmp(client_message, "") != 0)
 	{
 		while (IsStackEmpty(message_recipients) == false)
 		{
-			new recipient_client = -1;
+			int recipient_client = -1;
 			PopStackCell(message_recipients, recipient_client);
 		
-			new player_index = GetClientOfUserId(recipient_client);
+			int player_index = GetClientOfUserId(recipient_client);
 			if (player_index > 0 && !IsFakeClient(player_index) && IsClientInGame(player_index) && IsClientInGame(player_index))
 			{
 				PrintHintText(player_index, "%s", client_message);
@@ -1564,7 +1562,7 @@ public Action:hlx_sm_hint(args)
 }
 
 
-public Action:hlx_sm_browse(args)
+public Action hlx_sm_browse(int args)
 {
 	if (args < 2)
 	{
@@ -1572,21 +1570,21 @@ public Action:hlx_sm_browse(args)
 		return Plugin_Handled;
 	}
 
-	decl String: client_list[192];
+	char client_list[192];
 	GetCmdArg(1, client_list, sizeof(client_list));
 	BuildClientList(client_list);
 
-	new String: client_url[192];
+	char client_url[192];
 	GetCmdArg(2, client_url, sizeof(client_url));
 
 	if (IsStackEmpty(message_recipients) == false && strcmp(client_url, "") != 0)
 	{
 		while (IsStackEmpty(message_recipients) == false)
 		{
-			new recipient_client = -1;
+			int recipient_client = -1;
 			PopStackCell(message_recipients, recipient_client);
 
-			new player_index = GetClientOfUserId(recipient_client);
+			int player_index = GetClientOfUserId(recipient_client);
 			if (player_index > 0 && !IsFakeClient(player_index) && IsClientInGame(player_index))
 			{
 				if (g_bGameCanDoMotd)
@@ -1595,15 +1593,15 @@ public Action:hlx_sm_browse(args)
 					{
 						if (GetUserMessageType() == UM_Protobuf)
 						{
-							decl String:typeStr[5];
+							char typeStr[5];
 							IntToString(MOTDPANEL_TYPE_URL, typeStr, 4);
 							
-							new Handle:pb = StartMessageOne("VGUIMenu", player_index);
+							Handle pb = StartMessageOne("VGUIMenu", player_index);
 							
 							PbSetString(pb, "name", "info");
 							PbSetBool(pb, "show", true);
 
-							new Handle:modkey = PbAddMessage(pb, "subkeys");
+							Handle modkey = PbAddMessage(pb, "subkeys");
 							
 							PbSetString(modkey, "name", "type");
 							PbSetString(modkey, "str", typeStr); 
@@ -1642,7 +1640,7 @@ public Action:hlx_sm_browse(args)
 }
 
 
-public Action:hlx_sm_swap(args)
+public Action hlx_sm_swap(int args)
 {
 	if (args < 1)
 	{
@@ -1656,13 +1654,13 @@ public Action:hlx_sm_swap(args)
 		return Plugin_Handled;
 	}
 	
-	decl String:client_id[32];
+	char client_id[32];
 	GetCmdArg(1, client_id, sizeof(client_id));
 
-	new client = StringToInt(client_id);
+	int client = StringToInt(client_id);
 	if (client > 0)
 	{
-		new player_index = GetClientOfUserId(client);
+		int player_index = GetClientOfUserId(client);
 		if (player_index > 0 && IsClientInGame(player_index))
 		{
 			swap_player(player_index);
@@ -1672,7 +1670,7 @@ public Action:hlx_sm_swap(args)
 }
 
 
-public Action:hlx_sm_redirect(args)
+public Action hlx_sm_redirect(int args)
 {
 	if (args < 3)
 	{
@@ -1680,37 +1678,37 @@ public Action:hlx_sm_redirect(args)
 		return Plugin_Handled;
 	}
 
-	decl String: display_time[16];
+	char display_time[16];
 	GetCmdArg(1, display_time, sizeof(display_time));
 
-	decl String: client_list[192];
+	char client_list[192];
 	GetCmdArg(2, client_list, sizeof(client_list));
 	BuildClientList(client_list);
 	
-	new String: server_address[192];
+	char server_address[192];
 	GetCmdArg(3, server_address, sizeof(server_address));
 
-	new String: redirect_reason[192];
+	char redirect_reason[192];
 	GetCmdArg(4, redirect_reason, sizeof(redirect_reason));
 
 	if (IsStackEmpty(message_recipients) == false && strcmp(server_address, "") != 0)
 	{
 		while (IsStackEmpty(message_recipients) == false)
 		{
-			new recipient_client = -1;
+			int recipient_client = -1;
 			PopStackCell(message_recipients, recipient_client);
 
-			new player_index = GetClientOfUserId(recipient_client);
+			int player_index = GetClientOfUserId(recipient_client);
 			if (player_index > 0 && !IsFakeClient(player_index) && IsClientInGame(player_index))
 			{
-				new Handle:top_values = CreateKeyValues("msg");
+				Handle top_values = CreateKeyValues("msg");
 				KvSetString(top_values, "title", redirect_reason);
 				KvSetNum(top_values, "level", 1); 
 				KvSetString(top_values, "time", display_time); 
 				CreateDialog(player_index, top_values, DialogType_Msg);
 				CloseHandle(top_values);
 		
-				new Float: display_time_float;
+				float display_time_float;
 				display_time_float = StringToFloat(display_time);
 				DisplayAskConnectBox(player_index, display_time_float, server_address);
 			}
@@ -1722,7 +1720,7 @@ public Action:hlx_sm_redirect(args)
 
 
 
-public Action:hlx_sm_player_action(args)
+public Action hlx_sm_player_action(int args)
 {
 	if (args < 2)
 	{
@@ -1730,13 +1728,13 @@ public Action:hlx_sm_player_action(args)
 		return Plugin_Handled;
 	}
 
-	decl String: client_id[32];
+	char client_id[32];
 	GetCmdArg(1, client_id, sizeof(client_id));
 
-	decl String: player_action[64];
+	char player_action[64];
 	GetCmdArg(2, player_action, sizeof(player_action));
 
-	new client = StringToInt(client_id);
+	int client = StringToInt(client_id);
 
 	LogPlayerEvent(client, "triggered", player_action);
 
@@ -1744,7 +1742,7 @@ public Action:hlx_sm_player_action(args)
 }
 
 
-public Action:hlx_sm_team_action(args)
+public Action hlx_sm_team_action(int args)
 {
 	if (args < 2)
 	{
@@ -1752,10 +1750,10 @@ public Action:hlx_sm_team_action(args)
 		return Plugin_Handled;
 	}
 
-	decl String: team_name[64];
+	char team_name[64];
 	GetCmdArg(1, team_name, sizeof(team_name));
 
-	decl String: team_action[64];
+	char team_action[64];
 	GetCmdArg(2, team_action, sizeof(team_action));
 
 	LogToGame("Team \"%s\" triggered \"%s\"", team_name, team_action); 
@@ -1764,7 +1762,7 @@ public Action:hlx_sm_team_action(args)
 }
 
 
-public Action:hlx_sm_world_action(args)
+public Action hlx_sm_world_action(int args)
 {
 	if (args < 1)
 	{
@@ -1772,7 +1770,7 @@ public Action:hlx_sm_world_action(args)
 		return Plugin_Handled;
 	}
 
-	decl String: world_action[64];
+	char world_action[64];
 	GetCmdArg(1, world_action, sizeof(world_action));
 
 	LogToGame("World triggered \"%s\"", world_action); 
@@ -1781,10 +1779,10 @@ public Action:hlx_sm_world_action(args)
 }
 
 
-is_command_blocked(String: command[])
+int is_command_blocked(char[] command)
 {
-	new command_blocked = 0;
-	new command_index = 0;
+	int command_blocked = 0;
+	int command_index = 0;
 	while ((command_blocked == 0) && (command_index < sizeof(blocked_commands)))
 	{
 		if (strcmp(command, blocked_commands[command_index]) == 0)
@@ -1801,7 +1799,7 @@ is_command_blocked(String: command[])
 }
 
 
-public Action:hlx_block_commands(client, const String:command[], args)
+public Action hlx_block_commands(int client, const char[] command, int args)
 {
 	if (client)
 	{
@@ -1809,14 +1807,14 @@ public Action:hlx_block_commands(client, const String:command[], args)
 		{
 			return Plugin_Continue;
 		}
-		new block_chat_commands = GetConVarInt(hlx_block_chat_commands);
+		int block_chat_commands = GetConVarInt(hlx_block_chat_commands);
 
-		decl String: user_command[192];
+		char user_command[192];
 		GetCmdArgString(user_command, sizeof(user_command));
 
-		decl String: origin_command[192];
-		new start_index = 0;
-		new command_length = strlen(user_command);
+		char origin_command[192];
+		int start_index = 0;
+		int command_length = strlen(user_command);
 		if (command_length > 0)
 		{
 			if (user_command[0] == 34)
@@ -1835,11 +1833,11 @@ public Action:hlx_block_commands(client, const String:command[], args)
 			}
 		}
 
-		new String: command_type[32] = "say";
+		char command_type[32] = "say";
 
 		if (gamemod == Game_INSMOD)
 		{
-			decl String: say_type[1];
+			char say_type[1];
 			strcopy(say_type, 2, user_command[start_index]);
 			if (strcmp(say_type, "1") == 0)
 			{
@@ -1856,7 +1854,7 @@ public Action:hlx_block_commands(client, const String:command[], args)
 		{
 			if (block_chat_commands > 0)
 			{
-				new command_blocked = is_command_blocked(user_command[start_index]);
+				int command_blocked = is_command_blocked(user_command[start_index]);
 				if (command_blocked > 0)
 				{
 					if (IsClientInGame(client))
@@ -1899,14 +1897,14 @@ public Action:hlx_block_commands(client, const String:command[], args)
 }
 
 
-public Action: HLstatsX_Event_PlyTeamChange(Handle:event, const String:name[], bool:dontBroadcast)
+public Action HLstatsX_Event_PlyTeamChange(Handle event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	if (client > 0)
 	{
-		for (new i = 0; (i < sizeof(ColorSlotArray)); i++)
+		for (int i = 0; (i < sizeof(ColorSlotArray)); i++)
 		{
-			new color_client = ColorSlotArray[i];
+			int color_client = ColorSlotArray[i];
 			if (color_client > -1)
 			{
 				if (color_client == client)
@@ -1922,7 +1920,7 @@ public Action: HLstatsX_Event_PlyTeamChange(Handle:event, const String:name[], b
 						
 
 
-swap_player(player_index)
+int swap_player(int player_index)
 {
 	if (IsClientInGame(player_index))
 	{
@@ -1934,7 +1932,7 @@ swap_player(player_index)
 				{
 					CS_SwitchTeam(player_index, CS_TEAM_T);
 					CS_RespawnPlayer(player_index);
-					new new_model = GetRandomInt(0, 3);
+					int new_model = GetRandomInt(0, 3);
 					SetEntityModel(player_index, ts_models[new_model]);
 				}
 				else
@@ -1948,12 +1946,12 @@ swap_player(player_index)
 				{
 					CS_SwitchTeam(player_index, CS_TEAM_CT);
 					CS_RespawnPlayer(player_index);
-					new new_model = GetRandomInt(0, 3);
+					int new_model = GetRandomInt(0, 3);
 					SetEntityModel(player_index, ct_models[new_model]);
-					new weapon_entity = GetPlayerWeaponSlot(player_index, 4);
+					int weapon_entity = GetPlayerWeaponSlot(player_index, 4);
 					if (weapon_entity > 0)
 					{
-						decl String: class_name[32];
+						char class_name[32];
 						GetEdictClassname(weapon_entity, class_name, sizeof(class_name));
 						if (strcmp(class_name, "weapon_c4") == 0)
 						{
@@ -1971,7 +1969,7 @@ swap_player(player_index)
 }
 
 
-public CreateHLstatsXMenuMain(&Handle: MenuHandle)
+public void CreateHLstatsXMenuMain(Menu MenuHandle)
 {
 	MenuHandle = CreateMenu(HLstatsXMainCommandHandler, MenuAction_Select|MenuAction_Cancel);
 
@@ -2009,7 +2007,7 @@ public CreateHLstatsXMenuMain(&Handle: MenuHandle)
 }
 
 
-public CreateHLstatsXMenuAuto(&Handle: MenuHandle)
+public void CreateHLstatsXMenuAuto(Menu MenuHandle)
 {
 	MenuHandle = CreateMenu(HLstatsXAutoCommandHandler, MenuAction_Select|MenuAction_Cancel);
 
@@ -2023,7 +2021,7 @@ public CreateHLstatsXMenuAuto(&Handle: MenuHandle)
 }
 
 
-public CreateHLstatsXMenuEvents(&Handle: MenuHandle)
+public void CreateHLstatsXMenuEvents(Menu MenuHandle)
 {
 	MenuHandle = CreateMenu(HLstatsXEventsCommandHandler, MenuAction_Select|MenuAction_Cancel);
 
@@ -2037,13 +2035,13 @@ public CreateHLstatsXMenuEvents(&Handle: MenuHandle)
 }
 
 
-make_player_command(client, String: player_command[192]) 
+void make_player_command(int client, const char[] player_command) 
 {
 	LogPlayerEvent(client, "say", player_command);
 }
 
 
-public HLstatsXMainCommandHandler(Handle:menu, MenuAction:action, param1, param2)
+public int HLstatsXMainCommandHandler(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -2108,7 +2106,7 @@ public HLstatsXMainCommandHandler(Handle:menu, MenuAction:action, param1, param2
 }
 
 
-public HLstatsXAutoCommandHandler(Handle:menu, MenuAction:action, param1, param2)
+public int HLstatsXAutoCommandHandler(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -2130,7 +2128,7 @@ public HLstatsXAutoCommandHandler(Handle:menu, MenuAction:action, param1, param2
 }
 
 
-public HLstatsXEventsCommandHandler(Handle:menu, MenuAction:action, param1, param2)
+public int HLstatsXEventsCommandHandler(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
@@ -2151,13 +2149,13 @@ public HLstatsXEventsCommandHandler(Handle:menu, MenuAction:action, param1, para
 	}
 }
 
-stock BuildClientList(const String:client_list[])
+stock void BuildClientList(const char[] client_list)
 {
 	if (StrContains(client_list, ",") > -1)
 	{
-		decl String:MessageRecipients[MaxClients][8];
-		new recipient_count = ExplodeString(client_list, ",", MessageRecipients, MaxClients, 8);
-		for (new i = 0; (i < recipient_count); i++)
+		char[][] MessageRecipients= new char[MaxClients][8];
+		int recipient_count = ExplodeString(client_list, ",", MessageRecipients, MaxClients, 8);
+		for (int i = 0; (i < recipient_count); i++)
 		{
 			PushStackCell(message_recipients, StringToInt(MessageRecipients[i]));
 		}
@@ -2168,14 +2166,14 @@ stock BuildClientList(const String:client_list[])
 	}
 }
 
-stock PrintToChatRecipients(const String:message[])
+stock void PrintToChatRecipients(const char[] message)
 {
 	while (IsStackEmpty(message_recipients) == false)
 	{
-		new recipient_client = -1;
+		int recipient_client = -1;
 		PopStackCell(message_recipients, recipient_client);
 
-		new client = GetClientOfUserId(recipient_client);
+		int client = GetClientOfUserId(recipient_client);
 		if (client > 0 && !IsFakeClient(client) && IsClientInGame(client))
 		{
 			PrintToChat(client, "%s", message);
@@ -2183,17 +2181,17 @@ stock PrintToChatRecipients(const String:message[])
 	}
 }
 
-stock PrintToChatRecipientsFF(const String:message[])
+stock void PrintToChatRecipientsFF(const char[] message)
 {
 	while (IsStackEmpty(message_recipients) == false)
 	{
-		new recipient_client = -1;
+		int recipient_client = -1;
 		PopStackCell(message_recipients, recipient_client);
 
-		new client = GetClientOfUserId(recipient_client);
+		int client = GetClientOfUserId(recipient_client);
 		if (client > 0 && !IsFakeClient(client) && IsClientInGame(client))
 		{	
-			new Handle:hBf;
+			Handle hBf;
 			hBf = StartMessageOne("SayText", client, USERMSG_RELIABLE|USERMSG_BLOCKHOOKS);
 			if (hBf != INVALID_HANDLE)
 			{

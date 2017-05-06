@@ -25,20 +25,20 @@
 #define LOG_HIT_LEFTLEG    13
 #define LOG_HIT_RIGHTLEG   14
 
-new Handle:g_weapon_trie = INVALID_HANDLE;
+Handle g_weapon_trie = INVALID_HANDLE;
 
-CreatePopulateWeaponTrie()
+void CreatePopulateWeaponTrie()
 {
 	// Create a Trie
 	g_weapon_trie = CreateTrie();
 	
 	// Initial populate
-	for (new i = 0; i < MAX_LOG_WEAPONS; i++)
+	for (int i = 0; i < MAX_LOG_WEAPONS; i++)
 	{
 		if (g_weapon_list[i][0] == 0)
 		{
 			// some games have a couple blanks as place holders (so array indexes match with weapon ids)
-			decl String:randomKey[6];
+			char randomKey[6];
 			Format(randomKey, sizeof(randomKey), "%c%c%c%c%c%c", GetURandomInt(), GetURandomInt(), GetURandomInt(), GetURandomInt(), GetURandomInt(), GetURandomInt());
 			SetTrieValue(g_weapon_trie, randomKey, i);
 			continue;
@@ -48,21 +48,21 @@ CreatePopulateWeaponTrie()
 	}
 }
 
-dump_player_stats(client)
+void dump_player_stats(int client)
 {
 	if (IsClientInGame(client) && IsClientConnected(client))
 	{
-		decl String: player_authid[64];
+		char player_authid[64];
 		if (!GetClientAuthString(client, player_authid, sizeof(player_authid)))
 		{
 			strcopy(player_authid, sizeof(player_authid), "UNKNOWN");
 		}
-		new player_team_index = GetClientTeam(client);
+		int player_team_index = GetClientTeam(client);
 
-		new player_userid = GetClientUserId(client);
+		int player_userid = GetClientUserId(client);
 
-		new is_logged;
-		for (new i = 0; (i < MAX_LOG_WEAPONS); i++)
+		int is_logged;
+		for (int i = 0; (i < MAX_LOG_WEAPONS); i++)
 		{
 			#if defined INS
 			if (g_weapon_stats[client][i][LOG_HIT_HITS] > 0)
@@ -90,9 +90,9 @@ dump_player_stats(client)
 	}
 }
 
-reset_player_stats(client)
+void reset_player_stats(int client)
 {
-	for (new i = 0; (i < MAX_LOG_WEAPONS); i++)
+	for (int i = 0; (i < MAX_LOG_WEAPONS); i++)
 	{
 		g_weapon_stats[client][i][LOG_HIT_SHOTS]     = 0;
 		g_weapon_stats[client][i][LOG_HIT_HITS]      = 0;
@@ -112,23 +112,23 @@ reset_player_stats(client)
 	}
 }
 
-stock get_weapon_index(const String:weapon_name[])
+stock void get_weapon_index(const char[] weapon_name)
 {
-	new index = -1;
+	int index = -1;
 	GetTrieValue(g_weapon_trie, weapon_name, index);
 	return index;
 }
 
 
-WstatsDumpAll()
+void WstatsDumpAll()
 {
-	for (new i = 1; i <= MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		dump_player_stats(i);
 	}
 }
 
-OnPlayerDisconnect(client)
+void OnPlayerDisconnect(int client)
 {
 	if(client > 0 && IsClientInGame(client))
 	{
