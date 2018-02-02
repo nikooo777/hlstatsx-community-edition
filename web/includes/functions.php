@@ -4,7 +4,7 @@ HLstatsX Community Edition - Real-time player and clan rankings and statistics
 Copyleft (L) 2008-20XX Nicholas Hastings (nshastings@gmail.com)
 http://www.hlxcommunity.com
 
-HLstatsX Community Edition is a continuation of 
+HLstatsX Community Edition is a continuation of
 ELstatsNEO - Real-time player and clan rankings and statistics
 Copyleft (L) 2008-20XX Malte Bayer (steam@neo-soft.org)
 http://ovrsized.neo-soft.org/
@@ -18,7 +18,7 @@ HLstatsX is an enhanced version of HLstats made by Simon Garner
 HLstats - Real-time player and clan rankings and statistics for Half-Life
 http://sourceforge.net/projects/hlstats/
 Copyright (C) 2001  Simon Garner
-            
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
@@ -43,7 +43,7 @@ if (!defined('IN_HLSTATS'))
 
 /**
  * getOptions()
- * 
+ *
  * @return Array All the options from the options/perlconfig table
  */
 function getOptions()
@@ -66,7 +66,7 @@ function getOptions()
 // Test if flags exists
 /**
  * getFlag()
- * 
+ *
  * @param string $flag
  * @param string $type
  * @return string Either the flag or default flag if none exists
@@ -82,7 +82,7 @@ function getFlag($flag, $type='url')
 
 /**
  * valid_request()
- * 
+ *
  * @param string $str
  * @param boolean $numeric
  * @return mixed request
@@ -110,7 +110,7 @@ function valid_request($str, $numeric = false)
 
 /**
  * timestamp_to_str()
- * 
+ *
  * @param integer $timestamp
  * @return string Formatted Timestamp
  */
@@ -128,7 +128,7 @@ function timestamp_to_str($timestamp)
  * error()
  * Formats and outputs the given error message. Optionally terminates script
  * processing.
- * 
+ *
  * @param mixed $message
  * @param bool $exit
  * @return void
@@ -161,7 +161,7 @@ function error($message, $exit = true)
 
 /**
  * makeQueryString()
- * 
+ *
  * @param mixed $key
  * @param mixed $value
  * @param mixed $notkeys
@@ -171,7 +171,7 @@ function makeQueryString($key, $value, $notkeys = array())
 {
 	if (!is_array($notkeys))
 		$notkeys = array();
-	
+
 	$querystring = '';
 	foreach ($_GET as $k => $v)
 	{
@@ -195,7 +195,7 @@ function makeQueryString($key, $value, $notkeys = array())
 
 /**
  * pageHeader()
- * 
+ *
  * @param mixed $title
  * @param mixed $location
  * @return
@@ -218,7 +218,7 @@ function pageHeader($title = '', $location = '')
 
 /**
  * pageFooter()
- * 
+ *
  * @return
  */
 function pageFooter()
@@ -232,7 +232,7 @@ function pageFooter()
 
 /**
  * getSortArrow()
- * 
+ *
  * @param mixed $sort
  * @param mixed $sortorder
  * @param mixed $name
@@ -257,7 +257,7 @@ function getSortArrow($sort, $sortorder, $name, $longname, $var_sort = 'sort', $
 		$sortimg = 'sort-descending.gif';
 		$othersortorder = 'asc';
 	}
-	
+
 	$arrowstring = '<a href="' . $g_options['scripturl'] . '?' . makeQueryString($var_sort, $name,
 		array($var_sortorder));
 
@@ -278,12 +278,12 @@ function getSortArrow($sort, $sortorder, $name, $longname, $var_sort = 'sort', $
 	}
 
 	$arrowstring .= '" class="head"';
-	
+
 	if ( $ajax )
 	{
 		$arrowstring .= " onclick=\"Tabs.refreshTab({'$var_sort': '$name', $jsarrow}); return false;\"";
 	}
-	
+
 	$arrowstring .= ' title="Change sorting order">' . "$longname</a>";
 
 	if ($sort == $name)
@@ -301,7 +301,7 @@ function getSortArrow($sort, $sortorder, $name, $longname, $var_sort = 'sort', $
  * Returns the HTML for a SELECT box, generated using the 'values' array.
  * Each key in the array should be a OPTION VALUE, while each value in the
  * array should be a corresponding descriptive name for the OPTION.
- * 
+ *
  * @param mixed $name
  * @param mixed $values
  * @param string $currentvalue
@@ -338,14 +338,14 @@ function getSelect($name, $values, $currentvalue = '')
 
 /**
  * getLink()
- * 
+ *
  * @param mixed $url
  * @param integer $maxlength
  * @param string $type
  * @param string $target
  * @return
  */
- 
+
 function getLink($url, $type = 'http://', $target = '_blank')
 {
 	$urld=parse_url($url);
@@ -392,7 +392,7 @@ function getLink($url, $type = 'http://', $target = '_blank')
 
 /**
  * getEmailLink()
- * 
+ *
  * @param string $email
  * @param integer $maxlength
  * @return string Formatted email tag
@@ -425,7 +425,7 @@ function getEmailLink($email, $maxlength = 40)
 
 /**
  * getImage()
- * 
+ *
  * @param string $filename
  * @return mixed Either the image if exists, or false otherwise
  */
@@ -434,7 +434,7 @@ function getImage($filename)
 	preg_match('/^(.*\/)(.+)$/', $filename, $matches);
 	$relpath = $matches[1];
 	$realfilename = $matches[2];
-	
+
 	$path = IMAGE_PATH . $filename;
 	$url = IMAGE_PATH . $relpath . rawurlencode($realfilename);
 
@@ -497,7 +497,7 @@ function getJSText($js)
 
 function get_player_rank($playerdata) {
 	global $db, $g_options;
-	
+
 	$rank = 0;
 	$tempdeaths = $playerdata['deaths'];
 	if ($tempdeaths == 0)
@@ -531,7 +531,7 @@ if (!function_exists('file_get_contents')) {
               trigger_error('file_get_contents() failed to open stream: No such file or directory', E_USER_WARNING);
               return false;
           }
-  
+
           clearstatcache();
           if ($fsize = @filesize($filename)) {
               $data = fread($fh, $fsize);
@@ -541,7 +541,7 @@ if (!function_exists('file_get_contents')) {
                   $data .= fread($fh, 8192);
               }
           }
-  
+
           fclose($fh);
           return $data;
       }
@@ -549,7 +549,7 @@ if (!function_exists('file_get_contents')) {
 
 /**
  * Convert colors Usage:  color::hex2rgb("FFFFFF")
- * 
+ *
  * @author      Tim Johannessen <root@it.dk>
  * @version    1.0.1
  */
