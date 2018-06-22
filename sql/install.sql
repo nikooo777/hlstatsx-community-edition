@@ -3,7 +3,7 @@
 -- This file is only needed for new installations.
 
 SET @DBVERSION="78";
-SET @VERSION="1.6.19";
+SET @VERSION="1.6.20";
 
 -- --------------------------------------------------------
 
@@ -802,7 +802,7 @@ CREATE TABLE IF NOT EXISTS `hlstats_Awards` (
   `d_winner_id` int(10) unsigned default NULL,
   `d_winner_count` int(10) unsigned default NULL,
   `g_winner_id` int(10) unsigned default NULL,
-  `g_winner_count` int(10) unsigned default NULL,  
+  `g_winner_count` int(10) unsigned default NULL,
   PRIMARY KEY  (`awardId`),
   UNIQUE KEY `code` (`game`,`awardType`,`code`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
@@ -1667,10 +1667,10 @@ INSERT INTO `hlstats_Awards` (`awardType`, `game`, `code`, `name`, `verb`) VALUE
 ('W', 'valve', 'latency', 'Latency', 'ms average connection'),
 ('W', 'valve', 'mostkills', 'Most Kills', 'kills'),
 ('W', 'valve', 'suicide', 'Suicides', 'suicides'),
-('W', 'csgo', 'ak47', 'AK47', 'kills with ak47'), 
-('W', 'csgo', 'AUG', 'Aug', 'kills with aug'), 
+('W', 'csgo', 'ak47', 'AK47', 'kills with ak47'),
+('W', 'csgo', 'AUG', 'Aug', 'kills with aug'),
 ('W', 'csgo', 'awp', 'AWP', 'kills with awp'),
-('W', 'csgo', 'deagle', 'Desert Eagle', 'kills with deagle'), 
+('W', 'csgo', 'deagle', 'Desert Eagle', 'kills with deagle'),
 ('W', 'csgo', 'elite', 'Dual Berretta Elites', 'kills with elite'),
 ('W', 'csgo', 'famas', 'Fusil Automatique', 'kills with famas'),
 ('W', 'csgo', 'fiveseven', 'Five Seven', 'kills with fiveseven'),
@@ -6757,7 +6757,7 @@ INSERT INTO `hlstats_Weapons` (`game`, `code`, `name`, `modifier`) VALUES
 ('tf', 'unique_pickaxe', 'Equalizer', 2.0),
 ('tf', 'sword', 'Eyelander', 2.0),
 ('tf', 'sticky_resistance', 'Scottish Resistance', 1.0),
-('tf', 'taunt_demoman', 'Decapitation', 5.0),				
+('tf', 'taunt_demoman', 'Decapitation', 5.0),
 ('tf', 'taunt_soldier', 'Kamikaze', 5.0),
 ('tf', 'demoshield', 'Chargin'' Targe', 2.0),
 ('tf', 'ball', 'Baseball', 2.5),
